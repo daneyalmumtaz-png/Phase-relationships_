@@ -1,41 +1,16 @@
 <!DOCTYPE html>
-<!--
-  OpenGeo prototype 7: Phase relationships - three-phase soil (TP2.2)
-  ------------------------------------------------------------------
-  WHAT IT DOES
-  A soil is solids + water + air. The learner sets three independent
-  quantities (specific gravity Gs, void ratio e, degree of saturation Sr)
-  and the simulator draws the three-phase diagram (by volume) with masses,
-  and computes porosity, water content and all four unit weights.
-
-  RELATIONS (unit volume of solids, Vs = 1; gamma_w = 9.81 kN/m3)
-    Vv = e ; Vw = Sr*e ; Va = e(1 - Sr) ; Vt = 1 + e
-    porosity   n = e/(1+e)
-    water content  w = Sr*e/Gs            (from Se = w*Gs)
-    dry unit weight       gamma_d  = Gs*gw/(1+e)
-    bulk (moist)          gamma    = gw*(Gs + Sr*e)/(1+e)
-    saturated (Sr=1)      gamma_sat= gw*(Gs + e)/(1+e)
-    submerged (effective) gamma'   = gamma_sat - gw
-    saturated water content  w_sat = e/Gs
-
-  HOW TO RUN
-  Double-click the file, or open in any browser. No internet, no install.
-  Embed in Moodle/DigiCampus as an HTML file resource or HTML block.
-
-  ASSUMPTIONS  [check before any real deliverable]
-  - Sr is the input (0-100%) so the state is always physically valid;
-    water content is derived. Default numbers are ILLUSTRATIVE.
-
-  Author scaffold for D. Mumtaz / OpenGeo. Tune and translate before use.
--->
+<!-- Phase relationships, OpenGeo basic tier (TP2.2).
+     Soil is solids + water + air. Set Gs, void ratio and saturation; the
+     three-phase diagram, porosity, water content and unit weights follow.
+     Volumes taken with Vs = 1, gamma_w = 9.81 kN/m3. Values illustrative. -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Phase Relationships Simulator — OpenGeo prototype</title>
+<title>Phase Relationships Simulator</title>
 <style>
   :root{
-    --bg:#f5f6f4; --panel:#ffffff; --ink:#1f2a24; --muted:#5d6b62;
+    --bg:#f5f6f4; --panel:#fff; --ink:#1f2a24; --muted:#5d6b62;
     --line:#d8ddd6; --accent:#2f6f4f;
     --solids:#8a6d4b; --water:#2a7fb8; --air:#e9eef0;
     --gd:#7a8a80; --g:#2f6f4f; --gsat:#2a7fb8; --gsub:#c0563b;
@@ -44,40 +19,45 @@
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
        background:var(--bg);color:var(--ink);line-height:1.45}
   header{padding:18px 22px;border-bottom:1px solid var(--line);background:var(--panel)}
-  h1{font-size:1.15rem;margin:0 0 4px}
+  h1{font-size:1.3rem;margin:0 0 4px;font-weight:700}
   header p{margin:0;color:var(--muted);font-size:.85rem}
   .wrap{display:flex;flex-wrap:wrap;gap:18px;padding:18px;max-width:1180px;margin:0 auto}
-  .controls{flex:1 1 280px;min-width:260px;background:var(--panel);
-            border:1px solid var(--line);border-radius:10px;padding:16px}
+  .controls{flex:1 1 320px;min-width:300px;background:var(--panel);
+            border:1px solid var(--line);border-radius:10px;padding:18px}
   .stage{flex:2 1 560px;min-width:340px;background:var(--panel);
          border:1px solid var(--line);border-radius:10px;padding:12px}
   canvas{width:100%;height:auto;display:block}
-  .group{margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+  .group{margin-bottom:16px;padding-bottom:14px;border-bottom:1px dashed var(--line)}
   .group:last-child{border-bottom:none;margin-bottom:0}
-  .group h2{font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);margin:0 0 8px}
-  label{display:block;font-size:.82rem;margin:8px 0 2px}
-  .row{display:flex;align-items:center;gap:8px}
+  /* major headings: bold and a little larger */
+  .group h2{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+            color:var(--accent);margin:0 0 10px}
+  label{display:block;font-size:.9rem;margin:10px 0 3px;color:var(--muted)}
+  .row{display:flex;align-items:center;gap:10px}
   input[type=range]{flex:1;accent-color:var(--accent)}
-  .val{font-variant-numeric:tabular-nums;min-width:56px;text-align:right;font-size:.82rem}
-  .readout{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:.9rem;
-           font-variant-numeric:tabular-nums;margin-top:6px}
-  .readout .k{color:var(--muted)}
-  .readout .big{font-weight:600}
-  .topbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:8px;flex-wrap:wrap}
-  button{font:inherit;font-size:.82rem;padding:5px 11px;border:1px solid var(--line);
+  .val{font-variant-numeric:tabular-nums;min-width:60px;text-align:right;
+       font-size:1rem;font-weight:600}
+  /* results window: bigger, clearer */
+  .readout{display:grid;grid-template-columns:1fr auto;gap:10px 16px;
+           font-variant-numeric:tabular-nums;margin-top:4px}
+  .readout .k{color:var(--muted);font-size:1rem;align-self:center}
+  .readout .v{font-size:1.15rem;font-weight:600;text-align:right;align-self:center}
+  .readout .big{font-size:1.6rem;font-weight:700;text-align:right;color:var(--ink)}
+  .readout .hl{color:var(--accent)}
+  .topbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:10px;flex-wrap:wrap}
+  button{font:inherit;font-size:.85rem;padding:6px 12px;border:1px solid var(--line);
          background:#fff;border-radius:7px;cursor:pointer;color:var(--ink)}
   button:hover{border-color:var(--accent);color:var(--accent)}
-  .note{font-size:.74rem;color:var(--muted);margin-top:10px}
+  .note{font-size:.76rem;color:var(--muted);margin-top:12px}
 </style>
 </head>
 <body>
 <header>
   <h1 id="title">Phase Relationships Simulator</h1>
-  <p id="subtitle">Solids · water · air — void ratio, water content, unit weights — OpenGeo prototype (TP2.2)</p>
+  <p id="subtitle">Solids, water, air. Void ratio, water content and unit weights. OpenGeo (TP2.2)</p>
 </header>
 
 <div class="wrap">
-  <!-- ============ CONTROL PANEL ============ -->
   <div class="controls">
     <div class="topbar">
       <button id="langBtn">Suomeksi</button>
@@ -85,12 +65,12 @@
     </div>
 
     <div class="group">
-      <h2 id="hIn">Independent variables</h2>
-      <label id="lGs">Specific gravity of solids Gs</label>
+      <h2 id="hIn">Set the soil</h2>
+      <label id="lGs">Specific gravity of solids, Gs</label>
       <div class="row"><input type="range" id="gs" min="2.50" max="2.85" step="0.01" value="2.70"><span class="val" id="gsVal">2.70</span></div>
-      <label id="lE">Void ratio e</label>
+      <label id="lE">Void ratio, e</label>
       <div class="row"><input type="range" id="e" min="0.30" max="2.00" step="0.01" value="0.80"><span class="val" id="eVal">0.80</span></div>
-      <label id="lSr">Degree of saturation Sr (%)</label>
+      <label id="lSr">Degree of saturation, Sr (%)</label>
       <div class="row"><input type="range" id="sr" min="0" max="100" step="1" value="60"><span class="val" id="srVal">60</span></div>
     </div>
 
@@ -100,59 +80,56 @@
     </div>
 
     <div class="group">
-      <h2 id="hUW">Unit weights (kN/m³)</h2>
+      <h2 id="hUW">Unit weights (kN/m&sup3;)</h2>
       <div class="readout" id="uw"></div>
     </div>
 
-    <p class="note" id="note">Illustrative defaults only. Sr is the input so the state is always valid; water content is derived. Verify before use.</p>
+    <p class="note" id="note">Illustrative defaults. Saturation is the input so the state is always valid, and the water content follows from it. Set real values before use.</p>
   </div>
 
-  <!-- ============ DRAWING STAGE ============ -->
   <div class="stage">
-    <canvas id="cv" width="1000" height="520"></canvas>
+    <canvas id="cv" width="1000" height="540"></canvas>
   </div>
 </div>
 
 <script>
 "use strict";
 
-const GW = 9.81;                  // unit weight of water (kN/m3)
-let Gs = 2.70, e = 0.80, Sr = 60; // Sr in %
+const GW = 9.81;                  // unit weight of water, kN/m3
+let Gs = 2.70, e = 0.80, Sr = 60; // Sr as a percentage
 let lang = "en";
 
-// ---------- Bilingual strings (extend / correct as needed) ----------
 const T = {
  en:{title:"Phase Relationships Simulator",
-     subtitle:"Solids · water · air — void ratio, water content, unit weights — OpenGeo prototype (TP2.2)",
-     hIn:"Independent variables", lGs:"Specific gravity of solids Gs", lE:"Void ratio e", lSr:"Degree of saturation Sr (%)",
-     hState:"State", hUW:"Unit weights (kN/m³)",
-     note:"Illustrative defaults only. Sr is the input so the state is always valid; water content is derived. Verify before use.",
+     subtitle:"Solids, water, air. Void ratio, water content and unit weights. OpenGeo (TP2.2)",
+     hIn:"Set the soil", lGs:"Specific gravity of solids, Gs", lE:"Void ratio, e", lSr:"Degree of saturation, Sr (%)",
+     hState:"State", hUW:"Unit weights (kN/m\u00b3)",
+     note:"Illustrative defaults. Saturation is the input so the state is always valid, and the water content follows from it. Set real values before use.",
      langBtn:"Suomeksi", reset:"Reset",
-     n:"Porosity n", w:"Water content w", wsat:"Saturated water content w_sat",
-     gd:"Dry γd", g:"Bulk (moist) γ", gsat:"Saturated γsat", gsub:"Submerged γ′",
-     solids:"solids", water:"water", air:"air", volume:"VOLUME", mass:"MASS",
-     diagTitle:"Three-phase diagram (heights = volume, Vs = 1)", uwTitle:"Unit weights"},
+     n:"Porosity n", w:"Water content w", wsat:"Saturated w", 
+     gd:"Dry \u03b3d", g:"Bulk \u03b3", gsat:"Saturated \u03b3sat", gsub:"Submerged \u03b3\u2032",
+     solids:"solids", water:"water", air:"air", volume:"VOLUME", mass:"WEIGHT",
+     diagTitle:"Three-phase diagram (heights are volume, Vs = 1)", uwTitle:"Unit weights"},
  fi:{title:"Faasisuhteiden simulaattori",
-     subtitle:"Kiintoaines · vesi · ilma — huokosluku, vesipitoisuus, tilavuuspainot — OpenGeo-prototyyppi (TP2.2)",
-     hIn:"Riippumattomat muuttujat", lGs:"Kiintoaineksen ominaispaino Gs", lE:"Huokosluku e", lSr:"Kyllästysaste Sr (%)",
-     hState:"Tila", hUW:"Tilavuuspainot (kN/m³)",
-     note:"Vain havainnollistavat lähtöarvot. Sr on syöte, joten tila on aina kelvollinen; vesipitoisuus johdetaan. Tarkista ennen käyttöä.",
+     subtitle:"Kiintoaines, vesi, ilma. Huokosluku, vesipitoisuus ja tilavuuspainot. OpenGeo (TP2.2)",
+     hIn:"Aseta maa", lGs:"Kiintoaineksen ominaispaino, Gs", lE:"Huokosluku, e", lSr:"Kyll\u00e4stysaste, Sr (%)",
+     hState:"Tila", hUW:"Tilavuuspainot (kN/m\u00b3)",
+     note:"Havainnollistavat l\u00e4ht\u00f6arvot. Kyll\u00e4stysaste on sy\u00f6te, joten tila on aina kelvollinen ja vesipitoisuus johdetaan. Aseta oikeat arvot ennen k\u00e4ytt\u00f6\u00e4.",
      langBtn:"In English", reset:"Palauta",
-     n:"Huokoisuus n", w:"Vesipitoisuus w", wsat:"Kyllästysvesipitoisuus w_sat",
-     gd:"Kuiva γd", g:"Kostea γ", gsat:"Kyllästynyt γsat", gsub:"Tehokas (nosteenalainen) γ′",
-     solids:"kiintoaines", water:"vesi", air:"ilma", volume:"TILAVUUS", mass:"MASSA",
-     diagTitle:"Kolmifaasimalli (korkeudet = tilavuus, Vs = 1)", uwTitle:"Tilavuuspainot"}
+     n:"Huokoisuus n", w:"Vesipitoisuus w", wsat:"Kyll\u00e4stys w",
+     gd:"Kuiva \u03b3d", g:"Kostea \u03b3", gsat:"Kyll\u00e4stynyt \u03b3sat", gsub:"Tehokas \u03b3\u2032",
+     solids:"kiintoaines", water:"vesi", air:"ilma", volume:"TILAVUUS", mass:"PAINO",
+     diagTitle:"Kolmifaasimalli (korkeudet ovat tilavuus, Vs = 1)", uwTitle:"Tilavuuspainot"}
 };
 
-// ---------- Relationships ----------
 function calc(){
   const s = Sr/100;
   const Vs=1, Vw=s*e, Va=e*(1-s), Vt=1+e;
   const n = e/(1+e);
-  const w = s*e/Gs;                       // fraction
+  const w = s*e/Gs;                  // from Se = w Gs
   const wsat = e/Gs;
-  const Ms = Gs*GW;                        // weight of solids (kN) per Vs=1
-  const Mw = s*e*GW;                       // weight of water
+  const Ms = Gs*GW;                  // weight of solids per Vs = 1
+  const Mw = s*e*GW;                 // weight of water
   const gd  = Gs*GW/(1+e);
   const g   = GW*(Gs + s*e)/(1+e);
   const gsat= GW*(Gs + e)/(1+e);
@@ -160,7 +137,6 @@ function calc(){
   return {Vs,Vw,Va,Vt,n,w,wsat,Ms,Mw,gd,g,gsat,gsub};
 }
 
-// ---------- Drawing ----------
 const cv = document.getElementById("cv");
 const ctx = cv.getContext("2d");
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -168,84 +144,80 @@ const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).
 function draw(){
   const t=T[lang], C=calc();
   ctx.clearRect(0,0,cv.width,cv.height);
-  drawPhase(60, 40, 360, 440, C, t);
-  drawUnitWeights(470, 40, 500, 440, C, t);
+  drawPhase(70, 50, 360, 450, C, t);
+  drawUnitWeights(480, 50, 500, 450, C, t);
 }
 
 function drawPhase(x,y,w,h,C,t){
-  ctx.fillStyle=css("--ink"); ctx.font="12px system-ui"; ctx.textAlign="left";
-  ctx.fillText(t.diagTitle, x-20, y-16);
+  ctx.fillStyle=css("--ink"); ctx.font="bold 15px system-ui"; ctx.textAlign="left";
+  ctx.fillText(t.diagTitle, x-10, y-18);
 
-  const colW=120, colX=x+90, top=y+20, H=h-40;
-  const fAir=C.Va/C.Vt, fWater=C.Vw/C.Vt, fSolids=C.Vs/C.Vt;
-  const hAir=fAir*H, hWater=fWater*H, hSolids=fSolids*H;
+  const colW=130, colX=x+95, top=y+22, H=h-44;
+  const hAir=(C.Va/C.Vt)*H, hWater=(C.Vw/C.Vt)*H, hSolids=(C.Vs/C.Vt)*H;
 
-  // column headers
-  ctx.fillStyle=css("--muted"); ctx.font="10px system-ui"; ctx.textAlign="center";
-  ctx.fillText(t.volume, colX+colW/2, top-6);
-  ctx.fillText(t.mass, colX+colW+90, top-6);
+  ctx.fillStyle=css("--muted"); ctx.font="bold 12px system-ui"; ctx.textAlign="center";
+  ctx.fillText(t.volume, colX+colW/2, top-7);
+  ctx.fillText(t.mass, colX+colW+92, top-7);
 
   let yy=top;
-  const seg=(hh,col,nameVol,volVal,massVal,nameKey)=>{
+  const seg=(hh,col,nameKey,volVal,massVal)=>{
     ctx.fillStyle=col; ctx.fillRect(colX,yy,colW,hh);
-    ctx.strokeStyle="#fff"; ctx.strokeRect(colX,yy,colW,hh);
-    // phase name centred (if tall enough)
-    if(hh>16){ ctx.fillStyle = (col===css("--air"))?css("--muted"):"#fff";
-      ctx.font="11px system-ui"; ctx.textAlign="center";
-      ctx.fillText(t[nameKey], colX+colW/2, yy+hh/2+4); }
-    // volume label on left
-    ctx.fillStyle=css("--ink"); ctx.font="10px system-ui"; ctx.textAlign="right";
-    ctx.fillText("V="+volVal, colX-8, yy+Math.max(12,hh/2));
-    // mass label on right
-    ctx.textAlign="left"; ctx.fillText("M="+massVal, colX+colW+18, yy+Math.max(12,hh/2));
+    ctx.strokeStyle="#fff"; ctx.lineWidth=1; ctx.strokeRect(colX,yy,colW,hh);
+    if(hh>18){
+      ctx.fillStyle = (col===css("--air")) ? css("--muted") : "#fff";
+      ctx.font="bold 13px system-ui"; ctx.textAlign="center";
+      ctx.fillText(t[nameKey], colX+colW/2, yy+hh/2+4);
+    }
+    ctx.fillStyle=css("--ink"); ctx.font="12px system-ui"; ctx.textAlign="right";
+    ctx.fillText("V = "+volVal, colX-10, yy+Math.max(13,hh/2));
+    ctx.textAlign="left"; ctx.fillText("W = "+massVal, colX+colW+20, yy+Math.max(13,hh/2));
     yy+=hh;
   };
-  seg(hAir, css("--air"),    "air",   C.Va.toFixed(2), "0",            "air");
-  seg(hWater, css("--water"),"water", C.Vw.toFixed(2), C.Mw.toFixed(1),"water");
-  seg(hSolids, css("--solids"),"solids",C.Vs.toFixed(2), C.Ms.toFixed(1),"solids");
+  seg(hAir,   css("--air"),   "air",    C.Va.toFixed(2), "0");
+  seg(hWater, css("--water"), "water",  C.Vw.toFixed(2), C.Mw.toFixed(1));
+  seg(hSolids,css("--solids"),"solids", C.Vs.toFixed(2), C.Ms.toFixed(1));
 
   ctx.strokeStyle=css("--muted"); ctx.strokeRect(colX,top,colW,H);
-  // totals
-  ctx.fillStyle=css("--muted"); ctx.font="10px system-ui"; ctx.textAlign="center";
-  ctx.fillText("Vt = "+C.Vt.toFixed(2), colX+colW/2, top+H+16);
+  ctx.fillStyle=css("--muted"); ctx.font="bold 12px system-ui"; ctx.textAlign="center";
+  ctx.fillText("Vt = "+C.Vt.toFixed(2), colX+colW/2, top+H+18);
 }
 
 function drawUnitWeights(x,y,w,h,C,t){
-  ctx.fillStyle=css("--ink"); ctx.font="12px system-ui"; ctx.textAlign="left";
-  ctx.fillText(t.uwTitle, x, y-16);
+  ctx.fillStyle=css("--ink"); ctx.font="bold 15px system-ui"; ctx.textAlign="left";
+  ctx.fillText(t.uwTitle, x, y-18);
 
   const bars=[[t.gd,C.gd,css("--gd")],[t.g,C.g,css("--g")],[t.gsat,C.gsat,css("--gsat")],[t.gsub,C.gsub,css("--gsub")]];
-  const max=Math.max(C.gsat,1)*1.1, x0=x+170, full=w-200;
-  let by=y+30;
+  const max=Math.max(C.gsat,1)*1.1, x0=x+150, full=w-190;
+  let by=y+34;
   bars.forEach(([lab,val,col])=>{
-    ctx.fillStyle=css("--ink"); ctx.font="12px system-ui"; ctx.textAlign="right";
-    ctx.fillText(lab, x0-10, by+16);
-    ctx.fillStyle=col; ctx.fillRect(x0,by,Math.max(2,full*val/max),26);
-    ctx.fillStyle=css("--ink"); ctx.textAlign="left"; ctx.font="12px system-ui";
-    ctx.fillText(val.toFixed(1), x0+full*val/max+8, by+17);
-    by+=46;
+    ctx.fillStyle=css("--ink"); ctx.font="bold 14px system-ui"; ctx.textAlign="right";
+    ctx.fillText(lab, x0-12, by+20);
+    ctx.fillStyle=col; ctx.fillRect(x0,by,Math.max(2,full*val/max),30);
+    ctx.fillStyle=css("--ink"); ctx.textAlign="left"; ctx.font="bold 14px system-ui";
+    ctx.fillText(val.toFixed(1), x0+full*val/max+10, by+21);
+    by+=54;
   });
-  // note about gamma'
-  ctx.fillStyle=css("--muted"); ctx.font="11px system-ui"; ctx.textAlign="left";
-  ctx.fillText("γ′ = γsat − γw   (γw = "+GW+" kN/m³)", x0-150, by+6);
-  ctx.fillText("Se = w·Gs", x0-150, by+24);
+  ctx.fillStyle=css("--muted"); ctx.font="12px system-ui"; ctx.textAlign="left";
+  ctx.fillText("\u03b3\u2032 = \u03b3sat \u2212 \u03b3w   (\u03b3w = "+GW+" kN/m\u00b3)", x0-138, by+8);
+  ctx.fillText("Se = w \u00b7 Gs", x0-138, by+28);
 }
 
-// ---------- Panels ----------
+function row(k, v, big){
+  return `<span class="k">${k}</span><span class="${big?'big hl':'v'}">${v}</span>`;
+}
 function updatePanels(){
   const t=T[lang], C=calc();
   document.getElementById("state").innerHTML =
-    `<span class="k">${t.n}</span><span>${C.n.toFixed(3)}</span>`+
-    `<span class="k">${t.w}</span><span class="big">${(C.w*100).toFixed(1)} %</span>`+
-    `<span class="k">${t.wsat}</span><span>${(C.wsat*100).toFixed(1)} %</span>`;
+    row(t.w, (C.w*100).toFixed(1)+" %", true) +
+    row(t.n, C.n.toFixed(3)) +
+    row(t.wsat, (C.wsat*100).toFixed(1)+" %");
   document.getElementById("uw").innerHTML =
-    `<span class="k">${t.gd}</span><span>${C.gd.toFixed(2)}</span>`+
-    `<span class="k">${t.g}</span><span class="big">${C.g.toFixed(2)}</span>`+
-    `<span class="k">${t.gsat}</span><span>${C.gsat.toFixed(2)}</span>`+
-    `<span class="k">${t.gsub}</span><span>${C.gsub.toFixed(2)}</span>`;
+    row(t.g, C.g.toFixed(1), true) +
+    row(t.gd, C.gd.toFixed(1)) +
+    row(t.gsat, C.gsat.toFixed(1)) +
+    row(t.gsub, C.gsub.toFixed(1));
 }
 
-// ---------- Controls ----------
 function refresh(){ draw(); updatePanels(); }
 function bind(id,setter,dec){
   const el=document.getElementById(id);
@@ -262,14 +234,13 @@ document.getElementById("resetBtn").addEventListener("click",()=>location.reload
 
 function applyLang(){
   const t=T[lang]; document.documentElement.lang=lang;
-  const set=(id,txt)=>{const el=document.getElementById(id); if(el) el.textContent=txt;};
+  const set=(id,v)=>{const el=document.getElementById(id); if(el) el.innerHTML=v;};
   set("title",t.title); set("subtitle",t.subtitle);
   set("hIn",t.hIn); set("lGs",t.lGs); set("lE",t.lE); set("lSr",t.lSr);
   set("hState",t.hState); set("hUW",t.hUW);
   set("note",t.note); set("langBtn",t.langBtn); set("resetBtn",t.reset);
 }
 
-// ---------- Init ----------
 applyLang(); refresh();
 </script>
 </body>
